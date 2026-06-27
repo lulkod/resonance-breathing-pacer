@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Resonance">
+<meta name="theme-color" content="#0d0d0f">
+<title>Resonance</title>
+<style>
+  :root{
+    --bg:#0d0d0f;
+    --surface:#161618;
+    --dark:#070708;
+    --light:#1f1f22;
+    --text:#9c9ca2;
+    --muted:#55555b;
+    --accent:#b0542a;    /* inhale  - deep ember */
+    --accent-d:#8a3f1e;
+    --amber:#9c7438;     /* exhale  - deep gold  */
+    --ico:#e3d6cb;
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; height:100%; position:fixed; inset:0; overflow:hidden; overscroll-behavior:none;
+    background:radial-gradient(130% 80% at 50% -10%, #141416, var(--bg) 70%);
+    font-family:var(--sans); font-variant-numeric:tabular-nums; color:var(--text);
+    -webkit-user-select:none; user-select:none;
+  }
+  .app{ height:100dvh; max-width:430px; margin:0 auto; display:flex; flex-direction:column;
+    padding:max(20px,env(safe-area-inset-top)) 26px max(14px,env(safe-area-inset-bottom)); }
+
+  header{ text-align:center; margin-bottom:4px; }
+  header .ey{ font-size:11px; letter-spacing:3.5px; color:var(--muted); font-weight:600; }
+  header .pc{ font-size:11px; letter-spacing:2px; color:var(--muted); margin-top:6px; opacity:.85; }
+
+  .centre{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+
+  .orb-wrap{ position:relative; width:clamp(196px,55vw,246px); aspect-ratio:1; }
+  .ring{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+  .ring .track{ fill:none; stroke:#000; opacity:.5; stroke-width:2.5; }
+  .ring .prog{ fill:none; stroke:var(--accent); stroke-width:4; stroke-linecap:round; transition:stroke .6s ease; }
+  .frame{ position:absolute; inset:6%; border-radius:50%; background:var(--surface);
+    box-shadow:14px 14px 30px var(--dark), -10px -10px 24px var(--light); }
+  .orb{ position:absolute; left:50%; top:50%; width:74%; aspect-ratio:1; border-radius:50%;
+    transform:translate(-50%,-50%) scale(.62);
+    background:radial-gradient(circle at 42% 36%, #202023, #101012 72%);
+    box-shadow:inset 8px 8px 20px var(--dark), inset -6px -6px 16px var(--light);
+    overflow:hidden; will-change:transform; }
+  .ember{ position:absolute; inset:0; border-radius:50%; opacity:.08;
+    background:radial-gradient(circle at 50% 52%, var(--accent) 0%, rgba(176,84,42,.22) 32%, transparent 64%);
+    will-change:opacity; }
+  .readout{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; pointer-events:none; }
+  .phase{ font-size:18px; font-weight:600; letter-spacing:.5px; }
+  .pcount{ font-size:46px; font-weight:600; line-height:1; }
+  .pcount.idle{ font-size:26px; color:var(--muted); font-weight:500; }
+
+  .seek{ width:100%; max-width:292px; }
+  .seek .lbl{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:9px; }
+  .bar{ position:relative; height:6px; border-radius:4px; background:var(--bg);
+    box-shadow:inset 3px 3px 6px var(--dark), inset -2px -2px 4px var(--light); }
+  .fill{ position:absolute; left:0; top:0; bottom:0; width:0%; border-radius:4px;
+    background:linear-gradient(90deg, var(--accent-d), var(--accent) 55%, var(--amber)); }
+  .knob{ position:absolute; top:50%; left:0%; width:14px; height:14px; border-radius:50%;
+    transform:translate(-50%,-50%); background:var(--amber); box-shadow:2px 2px 5px var(--dark); }
+
+  .cluster{ display:flex; align-items:center; justify-content:center; gap:18px; }
+  .stat{ width:94px; background:var(--surface); border-radius:16px; padding:11px 13px; text-align:center;
+    box-shadow:6px 6px 13px var(--dark), -4px -4px 11px var(--light); }
+  .stat .k{ font-size:10px; color:var(--muted); letter-spacing:.4px; }
+  .stat .v{ font-size:19px; font-weight:600; margin-top:4px; color:var(--text); }
+  .play{ border:0; cursor:pointer; width:86px; height:86px; border-radius:50%; flex:0 0 auto;
+    background:radial-gradient(circle at 42% 36%, #b0542a, #8a3f1e 58%, #6c3016);
+    color:var(--ico); display:flex; align-items:center; justify-content:center;
+    box-shadow:7px 7px 16px var(--dark), -5px -5px 12px var(--light);
+    transition:transform .12s ease, box-shadow .12s ease; }
+  .play:active{ transform:scale(.96); box-shadow:inset 5px 5px 12px rgba(0,0,0,.45), inset -3px -3px 8px rgba(255,255,255,.04); }
+  .play svg{ width:32px; height:32px; }
+
+  .controls{ display:flex; align-items:center; justify-content:center; gap:38px; margin-top:14px; }
+  .ctrl{ border:0; cursor:pointer; color:var(--muted); width:66px; height:66px; border-radius:50%;
+    background:var(--surface); display:flex; align-items:center; justify-content:center;
+    box-shadow:7px 7px 15px var(--dark), -5px -5px 12px var(--light); transition:box-shadow .12s ease, color .12s ease; }
+  .ctrl:active{ box-shadow:inset 6px 6px 13px var(--dark), inset -4px -4px 10px var(--light); }
+  .ctrl.on{ color:var(--amber); }
+  .ctrl svg{ width:27px; height:27px; }
+  .tail{ flex:0 0 6vh; }
+
+  .scrim{ position:fixed; inset:0; background:rgba(5,5,7,.66); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:8; }
+  .scrim.show{ opacity:1; pointer-events:auto; }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:9; max-width:430px; margin:0 auto;
+    background:var(--surface); border-radius:26px 26px 0 0; padding:10px 26px max(26px,env(safe-area-inset-bottom));
+    box-shadow:0 -12px 34px rgba(0,0,0,.65); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.8,.2,1); }
+  .sheet.show{ transform:translateY(0); }
+  .grab{ width:42px; height:5px; border-radius:3px; background:var(--dark); margin:6px auto 18px; }
+  .row{ margin-bottom:22px; }
+  .row .lab{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; color:var(--muted); margin-bottom:11px; }
+  .row .lab b{ color:var(--text); font-size:14px; }
+  input[type=range]{ -webkit-appearance:none; width:100%; height:10px; border-radius:6px; background:var(--bg);
+    box-shadow:inset 3px 3px 6px var(--dark), inset -2px -2px 4px var(--light); }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+    background:var(--accent); box-shadow:2px 2px 5px var(--dark); cursor:pointer; }
+  .chips{ display:flex; gap:9px; flex-wrap:wrap; }
+  .chip{ border:0; cursor:pointer; color:var(--muted); font-size:13px; padding:10px 15px; border-radius:13px;
+    background:var(--surface); box-shadow:4px 4px 9px var(--dark), -3px -3px 8px var(--light); }
+  .chip.sel{ color:var(--accent); box-shadow:inset 4px 4px 9px var(--dark), inset -3px -3px 7px var(--light); }
+  .done{ width:100%; border:0; cursor:pointer; color:var(--text); font-size:15px; font-weight:600; padding:15px; border-radius:16px;
+    background:var(--surface); margin-top:4px; box-shadow:5px 5px 11px var(--dark), -4px -4px 10px var(--light); }
+  .done:active{ box-shadow:inset 5px 5px 11px var(--dark), inset -4px -4px 10px var(--light); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="ey">RESONANCE</div>
+    <div class="pc" id="paceTop">5.5 BREATHS / MIN</div>
+  </header>
+
+  <div class="centre">
+    <div class="orb-wrap">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle class="track" cx="50" cy="50" r="46.5"></circle>
+        <circle class="prog"  cx="50" cy="50" r="46.5" id="prog"></circle>
+      </svg>
+      <div class="frame"></div>
+      <div class="orb" id="orb"><div class="ember" id="ember"></div></div>
+      <div class="readout">
+        <div class="phase" id="phase">Ready</div>
+        <div class="pcount idle" id="pcount">5</div>
+      </div>
+    </div>
+
+    <div class="seek">
+      <div class="lbl"><span id="elapsed">0:00</span><span id="total">10:00</span></div>
+      <div class="bar"><div class="fill" id="fill"></div><div class="knob" id="knob"></div></div>
+    </div>
+
+    <div class="cluster">
+      <div class="stat"><div class="k">Time left</div><div class="v" id="timeVal">10:00</div></div>
+      <button class="play" id="playBtn" aria-label="Start">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="stat"><div class="k">Rounds</div><div class="v" id="roundVal">0</div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl" id="resetBtn" aria-label="Reset">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    </button>
+    <button class="ctrl on" id="soundBtn" aria-label="Sound on">
+      <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a3 3 0 0 1 0 6"/><path d="M19 6a7 7 0 0 1 0 12"/></svg>
+    </button>
+    <button class="ctrl" id="setBtn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><circle cx="9" cy="8" r="2.4" fill="var(--surface)"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="16" r="2.4" fill="var(--surface)"/></svg>
+    </button>
+  </div>
+  <div class="tail"></div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="row">
+    <div class="lab">Pace <b><span id="paceLab">5.5</span> breaths / min</b></div>
+    <input type="range" id="paceRange" min="4.5" max="7" step="0.5" value="5.5">
+  </div>
+  <div class="row">
+    <div class="lab">Breath style</div>
+    <div class="chips" id="styleChips">
+      <button class="chip sel" data-style="equal">Equal in / out</button>
+      <button class="chip" data-style="calm">Longer exhale</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="lab">Session</div>
+    <div class="chips" id="lenChips">
+      <button class="chip" data-min="5">5 min</button>
+      <button class="chip sel" data-min="10">10 min</button>
+      <button class="chip" data-min="15">15 min</button>
+      <button class="chip" data-min="20">20 min</button>
+      <button class="chip" data-min="0">&#8734;</button>
+    </div>
+  </div>
+  <button class="done" id="doneBtn">Done</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $=s=>document.getElementById(s);
+  const orb=$("orb"), ember=$("ember"), prog=$("prog"), phaseEl=$("phase"), pcount=$("pcount");
+  const fill=$("fill"), knob=$("knob"), elapsedEl=$("elapsed"), totalEl=$("total");
+  const timeVal=$("timeVal"), roundVal=$("roundVal");
+  const playBtn=$("playBtn"), playIcon=$("playIcon"), resetBtn=$("resetBtn");
+  const soundBtn=$("soundBtn"), soundIcon=$("soundIcon"), setBtn=$("setBtn");
+  const sheet=$("sheet"), scrim=$("scrim"), doneBtn=$("doneBtn");
+  const paceRange=$("paceRange"), paceLab=$("paceLab"), paceTop=$("paceTop");
+
+  const C=2*Math.PI*46.5; prog.style.strokeDasharray=C;
+
+  let bpm=5.5, style="equal", sessionSecs=600;
+  let running=false, phase="inhale", phaseT=0, sessionT=0, rounds=0, last=null;
+
+  let ac=null, soundOn=true;
+  function ensureAudio(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(ac&&ac.state==="suspended") ac.resume(); }
+  function tone(f,d,v){ if(!soundOn||!ac) return; const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+d+0.05); }
+  const cueIn=()=>tone(528,0.55,0.16), cueOut=()=>tone(396,0.7,0.16);
+  const cueDone=()=>{ tone(528,0.9,0.14); setTimeout(()=>tone(660,1.1,0.12),120); };
+
+  const cycle=()=>60/bpm;
+  function dur(p){ const c=cycle(); if(style==="calm") return p==="inhale"?c*0.4:c*0.6; return c/2; }
+  const smooth=p=>0.5-0.5*Math.cos(Math.PI*Math.min(Math.max(p,0),1));
+  function fmt(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+
+  function paint(p){
+    const eased = phase==="inhale" ? smooth(p) : 1-smooth(p);
+    orb.style.transform="translate(-50%,-50%) scale("+(0.62+0.38*eased).toFixed(3)+")";
+    ember.style.opacity=(0.07+0.3*eased).toFixed(3);
+    const col = phase==="inhale" ? "var(--accent)" : "var(--amber)";
+    prog.style.stroke=col;
+    const ringP = phase==="inhale" ? p : 1-p;
+    prog.style.strokeDashoffset=(C*(1-ringP)).toFixed(2);
+    phaseEl.textContent = phase==="inhale" ? "In" : "Out";
+    phaseEl.style.color=col;
+    pcount.classList.remove("idle");
+    pcount.textContent=Math.max(1,Math.round(dur(phase)-phaseT));
+  }
+  function paintSeek(eased){
+    let pct;
+    if(sessionSecs>0){ pct=Math.min(sessionT/sessionSecs,1); elapsedEl.textContent=fmt(sessionT); totalEl.textContent=fmt(sessionSecs); }
+    else { pct=eased; elapsedEl.textContent=fmt(sessionT); totalEl.textContent="\u221E"; }
+    fill.style.width=(pct*100)+"%"; knob.style.left=(pct*100)+"%";
+  }
+  function advance(){ phaseT-=dur(phase);
+    if(phase==="inhale"){ phase="exhale"; cueOut(); }
+    else { phase="inhale"; rounds++; roundVal.textContent=rounds; cueIn(); } }
+
+  function loop(now){
+    if(running){
+      if(last==null) last=now;
+      const dt=(now-last)/1000; last=now; phaseT+=dt; sessionT+=dt;
+      if(phaseT>=dur(phase)) advance();
+      const p=phaseT/dur(phase); paint(p);
+      paintSeek(phase==="inhale"?smooth(p):1-smooth(p));
+      if(sessionSecs>0){ const left=sessionSecs-sessionT; timeVal.textContent=fmt(left); if(left<=0) finish(); }
+      else timeVal.textContent=fmt(sessionT);
+    } else last=null;
+    requestAnimationFrame(loop);
+  }
+
+  function start(){ ensureAudio(); if(phase==="inhale"&&phaseT===0) cueIn(); running=true;
+    playIcon.innerHTML='<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'; playBtn.setAttribute("aria-label","Pause"); requestWake(); }
+  function pause(){ running=false; playIcon.innerHTML='<path d="M8 5v14l11-7z"/>'; playBtn.setAttribute("aria-label","Start"); releaseWake(); }
+  function reset(){ pause(); phase="inhale"; phaseT=0; sessionT=0; rounds=0; roundVal.textContent="0";
+    timeVal.textContent= sessionSecs>0?fmt(sessionSecs):"0:00";
+    prog.style.strokeDashoffset=C; prog.style.stroke="var(--accent)";
+    orb.style.transform="translate(-50%,-50%) scale(.62)"; ember.style.opacity=.07;
+    phaseEl.textContent="Ready"; phaseEl.style.color="var(--text)";
+    pcount.classList.add("idle"); pcount.textContent=Math.round(dur("inhale"));
+    fill.style.width="0%"; knob.style.left="0%"; elapsedEl.textContent="0:00";
+    totalEl.textContent= sessionSecs>0?fmt(sessionSecs):"\u221E"; }
+  function finish(){ pause(); cueDone(); phaseEl.textContent="Done"; phaseEl.style.color="var(--amber)";
+    pcount.classList.add("idle"); pcount.textContent="\u2713"; timeVal.textContent="0:00"; fill.style.width="100%"; knob.style.left="100%"; }
+
+  playBtn.onclick=()=> running?pause():start();
+  resetBtn.onclick=reset;
+  soundBtn.onclick=()=>{ soundOn=!soundOn; soundBtn.classList.toggle("on",soundOn);
+    soundBtn.setAttribute("aria-label",soundOn?"Sound on":"Sound off");
+    soundIcon.innerHTML= soundOn
+      ? '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a3 3 0 0 1 0 6"/><path d="M19 6a7 7 0 0 1 0 12"/>'
+      : '<path d="M4 9v6h4l5 4V5L8 9z"/><line x1="17" y1="9" x2="22" y2="14"/><line x1="22" y1="9" x2="17" y2="14"/>'; };
+
+  function openSheet(){ ensureAudio(); scrim.classList.add("show"); sheet.classList.add("show"); }
+  function closeSheet(){ scrim.classList.remove("show"); sheet.classList.remove("show"); }
+  setBtn.onclick=openSheet; scrim.onclick=closeSheet; doneBtn.onclick=closeSheet;
+
+  paceRange.oninput=e=>{ bpm=parseFloat(e.target.value); paceLab.textContent=bpm; paceTop.textContent=bpm+" BREATHS / MIN";
+    if(!running&&phaseT===0) pcount.textContent=Math.round(dur("inhale")); };
+  $("styleChips").onclick=e=>{ const b=e.target.closest(".chip"); if(!b) return; style=b.dataset.style;
+    [...e.currentTarget.children].forEach(c=>c.classList.toggle("sel",c===b));
+    if(!running&&phaseT===0) pcount.textContent=Math.round(dur("inhale")); };
+  $("lenChips").onclick=e=>{ const b=e.target.closest(".chip"); if(!b) return; const m=parseInt(b.dataset.min,10);
+    sessionSecs=m*60; [...e.currentTarget.children].forEach(c=>c.classList.toggle("sel",c===b));
+    if(!running&&sessionT===0){ timeVal.textContent= m>0?fmt(sessionSecs):"0:00"; totalEl.textContent= m>0?fmt(sessionSecs):"\u221E"; } };
+
+  let wake=null;
+  async function requestWake(){ try{ if("wakeLock" in navigator) wake=await navigator.wakeLock.request("screen"); }catch(e){} }
+  function releaseWake(){ try{ if(wake){ wake.release(); wake=null; } }catch(e){} }
+  document.addEventListener("visibilitychange",()=>{ if(running&&document.visibilityState==="visible") requestWake(); });
+
+  reset(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
